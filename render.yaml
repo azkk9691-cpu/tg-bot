@@ -1,0 +1,24 @@
+﻿services:
+  - type: web
+    name: buldrop-tg-bot
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: "file:./dev.db"
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_TELEGRAM_ID
+        sync: false
+      - key: ADMIN_USERNAME
+        value: yusupov_bro
+      - key: PAYMENT_CARD_NUMBER
+        value: "6262910202797114"
+      - key: PAYMENT_CARD_HOLDER
+        value: "BULDROP PM"
+      - key: PAYMENT_EXPIRE_MINUTES
+        value: "5"

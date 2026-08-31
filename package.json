@@ -1,0 +1,41 @@
+{
+  "name": "buldrop-pm-bot",
+  "version": "1.0.0",
+  "description": "Professional BULDROP PM Promo Codes Telegram Bot with PostgreSQL, Telegraf and Prisma",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "build": "prisma generate && prisma db push",
+    "postinstall": "prisma generate",
+    "dev": "nodemon src/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:push": "prisma db push",
+    "prisma:seed": "node prisma/seed.js",
+    "prisma:studio": "prisma studio"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "telegram-bot",
+    "telegraf",
+    "prisma",
+    "sqlite",
+    "promo-codes",
+    "ecommerce"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^16.4.7",
+    "prisma": "^5.22.0",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

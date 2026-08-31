@@ -68,6 +68,23 @@ async function main() {
 
     server.listen(port, () => {
       logger.info(`🌐 Health check server listening on port ${port}`);
+
+      // Auto keep-alive ping for Render free tier (pings every 10 minutes to prevent sleep)
+      const renderUrl = process.env.RENDER_EXTERNAL_URL || 'https://buldrop-tg-bot.onrender.com';
+      if (process.env.NODE_ENV === 'production') {
+        setInterval(async () => {
+          try {
+            const https = await import('https');
+            https.default.get(`${renderUrl}/health`, (res) => {
+              logger.info(`🔄 Keep-alive ping sent to ${renderUrl}/health (Status: ${res.statusCode})`);
+            }).on('error', (err) => {
+              logger.warn(`Keep-alive ping note: ${err.message}`);
+            });
+          } catch (e) {
+            // ignore
+          }
+        }, 10 * 60 * 1000); // Har 10 daqiqada o'zini uyg'otib turadi
+      }
     });
 
     // Graceful stop listeners

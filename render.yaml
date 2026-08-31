@@ -32,5 +32,10 @@ services:
         value: "false"
       - key: STARS_RATE
         value: "250"
+      - key: SMS_WEBHOOK_KEY
+        value: "buldrop_secret_key"
+      - key: RENDER_EXTERNAL_URL
+        value: "https://buldrop-tg-bot.onrender.com"
       - key: PORT
         value: "3000"
+

@@ -24,6 +24,7 @@ import {
   getAdminPaymentApprovalKeyboard,
 } from '../keyboards/adminKeyboards.js';
 import { getCancelKeyboard, getMainMenuKeyboard } from '../keyboards/mainKeyboards.js';
+import { SmsParserService } from '../services/smsParserService.js';
 import { logger } from '../utils/logger.js';
 
 export function registerAdminHandlers(bot) {
@@ -708,5 +709,44 @@ export function registerAdminHandlers(bot) {
     }
 
     return next();
+  });
+
+  /**
+   * Admin Simulation: Test Incoming SMS Auto-Payment
+   */
+  bot.command('test_sms', requireAdmin, async (ctx) => {
+    const text = ctx.message.text.replace('/test_sms', '').trim();
+    if (!text) {
+      return ctx.reply(
+        "📱 <b>SMS Test buyrug'i</b>\n\n" +
+          "Masalan:\n<code>/test_sms Karta 8600 ga 20000 UZS tushdi. Izoh: BP1</code>\n\n" +
+          "Ushbu buyruq orqali kartaga pul tushganini simulyatsiya qilib, avtomatik to'lovni sinab ko'rishingiz mumkin.",
+        { parse_mode: 'HTML' }
+      );
+    }
+
+    const result = await SmsParserService.processIncomingSms({
+      sender: '3700',
+      message: text,
+      bot,
+    });
+
+    if (result.matched) {
+      await ctx.reply(
+        `✅ <b>To'lov avtomatik tarzda tasdiqlandi!</b>\n\n` +
+          `👤 <b>Mijoz:</b> ${result.user?.firstName} (ID: ${result.user?.telegramId})\n` +
+          `💵 <b>Summa:</b> ${formatMoney(result.amount)}\n` +
+          `💰 <b>Yangi balans:</b> ${formatMoney(result.newBalance)}`,
+        { parse_mode: 'HTML' }
+      );
+    } else {
+      await ctx.reply(
+        `⚠️ <b>SMS qabul qilindi, lekin mos keluvchi to'lov so'rovi topilmadi.</b>\n\n` +
+          `💵 Summa: ${result.amount ? formatMoney(result.amount) : 'Aniqlanmadi'}\n` +
+          `💬 Kod: ${result.commentCode || "Yo'q"}\n\n` +
+          `<i>SMS keshda saqlandi. Foydalanuvchi "To'lovni tekshirish" tugmasini bossa, balansi to'ldiriladi.</i>`,
+        { parse_mode: 'HTML' }
+      );
+    }
   });
 }

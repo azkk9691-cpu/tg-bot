@@ -41,8 +41,9 @@ async function main() {
 
     // Start bot polling
     await bot.launch(() => {
-      logger.info('🤖 Bot successfully launched and listening for updates!');
-      logger.info(`👑 Main Admin Telegram ID: ${config.adminTelegramId || 'Not configured'}`);
+      logger.info('🤖 Bot muvaffaqiyatli ishga tushirildi va xabarlarni tinglamoqda!');
+      logger.info(`👑 Asosiy Ega (Owner): @${config.ownerUsername} (ID: ${config.ownerTelegramId || 'Not configured'})`);
+      logger.info(`🛡 Adminlar: ${config.adminTelegramIds.map((id) => id.toString()).join(', ')}`);
     });
 
     // Start lightweight HTTP health-check server for Cloud Hostings (Render, Koyeb, Railway, etc.)

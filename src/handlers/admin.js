@@ -48,8 +48,10 @@ export function registerAdminHandlers(bot) {
   async function openAdminPanel(ctx) {
     if (ctx.session) ctx.session.reset();
 
+    const roleTitle = ctx.isOwner ? '👑 Asosiy Ega (Owner)' : '🛡 Administrator';
     const text =
-      `👑 <b>Admin Panelga xush kelibsiz!</b>\n\n` +
+      `👑 <b>Admin Panelga xush kelibsiz!</b>\n` +
+      `Sizning maqomingiz: <b>${roleTitle}</b>\n\n` +
       `Boshqaruv menyusidan kerakli bo'limni tanlang:`;
 
     if (ctx.callbackQuery) {
@@ -278,16 +280,19 @@ export function registerAdminHandlers(bot) {
     try {
       const card = await AdminService.getPaymentCardDetails();
       const channels = await ChannelService.getRequiredChannels();
+      const isChannelsEnabled = await ChannelService.isSubscriptionRequired();
+      const adsStatusText = isChannelsEnabled ? '🟢 Yoqilgan' : '🔴 O\'chirilgan (Adsiz)';
 
       const text =
         `⚙️ <b>Bot Sozlamalari</b>\n\n` +
         `💳 <b>To'lov kartasi:</b> <code>${card.cardNumber}</code> (${escapeHtml(card.cardHolder)})\n` +
-        `📢 <b>Majburiy kanallar soni:</b> ${channels.length} ta\n\n` +
+        `📢 <b>Majburiy obuna (Reklama):</b> <b>${adsStatusText}</b>\n` +
+        `📋 <b>Faol kanallar soni:</b> ${channels.length} ta\n\n` +
         `Kerakli sozlamani tanlang:`;
 
       await ctx.reply(text, {
         parse_mode: 'HTML',
-        ...getAdminSettingsKeyboard(),
+        ...getAdminSettingsKeyboard(isChannelsEnabled),
       });
     } catch (error) {
       logger.error('Error fetching settings:', error);
@@ -299,16 +304,48 @@ export function registerAdminHandlers(bot) {
     await ctx.answerCbQuery();
     const card = await AdminService.getPaymentCardDetails();
     const channels = await ChannelService.getRequiredChannels();
+    const isChannelsEnabled = await ChannelService.isSubscriptionRequired();
+    const adsStatusText = isChannelsEnabled ? '🟢 Yoqilgan' : '🔴 O\'chirilgan (Adsiz)';
 
     const text =
       `⚙️ <b>Bot Sozlamalari</b>\n\n` +
       `💳 <b>To'lov kartasi:</b> <code>${card.cardNumber}</code> (${escapeHtml(card.cardHolder)})\n` +
-      `📢 <b>Majburiy kanallar soni:</b> ${channels.length} ta\n\n` +
+      `📢 <b>Majburiy obuna (Reklama):</b> <b>${adsStatusText}</b>\n` +
+      `📋 <b>Faol kanallar soni:</b> ${channels.length} ta\n\n` +
       `Kerakli sozlamani tanlang:`;
 
     await ctx.editMessageText(text, {
       parse_mode: 'HTML',
-      ...getAdminSettingsKeyboard(),
+      ...getAdminSettingsKeyboard(isChannelsEnabled),
+    });
+  });
+
+  bot.action('admin_toggle_ads', requireAdmin, async (ctx) => {
+    const current = await ChannelService.isSubscriptionRequired();
+    const nextState = !current;
+    await ChannelService.setSubscriptionRequired(nextState);
+
+    await ctx.answerCbQuery(
+      nextState
+        ? "📢 Majburiy obuna (Reklama) yoqildi!"
+        : "🚫 Majburiy obuna o'chirildi! Bot endi to'liq adsiz ishlaydi.",
+      { show_alert: true }
+    );
+
+    const card = await AdminService.getPaymentCardDetails();
+    const channels = await ChannelService.getRequiredChannels();
+    const adsStatusText = nextState ? '🟢 Yoqilgan' : '🔴 O\'chirilgan (Adsiz)';
+
+    const text =
+      `⚙️ <b>Bot Sozlamalari</b>\n\n` +
+      `💳 <b>To'lov kartasi:</b> <code>${card.cardNumber}</code> (${escapeHtml(card.cardHolder)})\n` +
+      `📢 <b>Majburiy obuna (Reklama):</b> <b>${adsStatusText}</b>\n` +
+      `📋 <b>Faol kanallar soni:</b> ${channels.length} ta\n\n` +
+      `Kerakli sozlamani tanlang:`;
+
+    await ctx.editMessageText(text, {
+      parse_mode: 'HTML',
+      ...getAdminSettingsKeyboard(nextState),
     });
   });
 
@@ -476,12 +513,19 @@ export function registerAdminHandlers(bot) {
         const userTgId = result.user.telegramId.toString();
         const userNotification =
           `❌ <b>To'lovingiz rad etildi!</b>\n\n` +
-          `💵 Summa: <b>${formattedAmount}</b>\n` +
-          `Sabab: Chek ma'lumotlari tasdiqlanmadi.\n\n` +
-          `<i>Savollar yoki tushunmovchiliklar bo'lsa, adminga murojaat qiling.</i>`;
+          `💵 <b>Summa:</b> <code>${formattedAmount}</code>\n` +
+          `⚠️ <b>Sabab:</b> Chek ma'lumotlari tasdiqlanmadi.\n\n` +
+          `❓ <i>Savollar yoki tushunmovchiliklar bo'lsa, murojaat qilishingiz mumkin:</i>\n` +
+          `@yusupov_bulldrop`;
+
+        const userKeyboard = Markup.inlineKeyboard([
+          [Markup.button.url('💬 @yusupov_bulldrop', 'https://t.me/yusupov_bulldrop')],
+          [Markup.button.callback('🏠 Bosh menyu', 'nav_main_menu')],
+        ]);
 
         await ctx.telegram.sendMessage(userTgId, userNotification, {
           parse_mode: 'HTML',
+          ...userKeyboard,
         });
       } catch (userErr) {
         logger.warn('Could not send rejection notification to user:', userErr.message);

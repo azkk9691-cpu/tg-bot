@@ -48,6 +48,9 @@ model PaymentRequest {
   userId         Int       @map("user_id")
   amount         BigInt    @map("amount")
   receiptFileId  String?   @map("receipt_file_id")
+  provider       String    @default("CARD") @map("provider") // 'CARD', 'STARS', 'CRYPTOBOT', 'CLICK', 'PAYME'
+  externalId     String?   @map("external_id")
+  currency       String    @default("UZS") @map("currency")
   status         String    @default("PENDING") @map("status") // 'PENDING', 'WAITING_APPROVAL', 'APPROVED', 'REJECTED', 'EXPIRED'
   createdAt      DateTime  @default(now()) @map("created_at")
   expiresAt      DateTime  @map("expires_at")
@@ -59,6 +62,7 @@ model PaymentRequest {
 
   @@index([userId, status])
   @@index([status])
+  @@index([externalId])
   @@map("payment_requests")
 }
 

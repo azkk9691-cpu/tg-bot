@@ -20,9 +20,15 @@ export function registerProfileHandlers(bot) {
       const purchasesCount = user._count?.purchases || 0;
       const registeredDate = formatDateOnly(user.createdAt);
 
-      // Ssilka faqat adminga ko'rinadi
+      let roleBadge = '';
+      if (ctx.isOwner) {
+        roleBadge = ' 👑 (Ega)';
+      } else if (ctx.isAdmin) {
+        roleBadge = ' 🛡 (Admin)';
+      }
+
       const nameDisplay = ctx.isAdmin
-        ? `<a href="tg://user?id=${telegramId}">${name}</a> 👑`
+        ? `<a href="tg://user?id=${telegramId}">${name}</a>${roleBadge}`
         : name;
 
       let messageText =

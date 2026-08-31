@@ -4,7 +4,7 @@ import { logger } from '../utils/logger.js';
 
 /**
  * Authentication Middleware
- * Syncs user to database and attaches `ctx.dbUser` and `ctx.isAdmin`
+ * Syncs user to database and attaches `ctx.dbUser`, `ctx.isAdmin`, and `ctx.isOwner`
  */
 export function authMiddleware() {
   return async (ctx, next) => {
@@ -12,10 +12,21 @@ export function authMiddleware() {
 
     try {
       const telegramId = BigInt(ctx.from.id);
+      const username = ctx.from.username ? ctx.from.username.toLowerCase() : '';
 
-      // Check if admin (supports multiple IDs)
-      const isAdmin = config.adminTelegramIds.some((id) => id === telegramId);
-      ctx.isAdmin = isAdmin;
+      // Check if Owner (@yusupov_bulldrop)
+      const isOwner =
+        (config.ownerTelegramId && telegramId === config.ownerTelegramId) ||
+        (config.ownerUsername && username === config.ownerUsername);
+
+      // Check if Admin (@yusupov_bro or Owner)
+      const isAdmin =
+        isOwner ||
+        config.adminTelegramIds.some((id) => id === telegramId) ||
+        config.adminUsernames.some((u) => u === username);
+
+      ctx.isOwner = Boolean(isOwner);
+      ctx.isAdmin = Boolean(isAdmin);
 
       // Upsert user in database
       const dbUser = await UserService.findOrCreateUser(ctx.from);

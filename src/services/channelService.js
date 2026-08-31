@@ -1,8 +1,47 @@
 import prisma from '../database/prisma.js';
 import { DEFAULT_REQUIRED_CHANNELS } from '../config/constants.js';
 import { logger } from '../utils/logger.js';
+import config from '../config/index.js';
 
 export class ChannelService {
+  /**
+   * Check if mandatory subscription / ads is enabled in settings
+   */
+  static async isSubscriptionRequired() {
+    try {
+      const setting = await prisma.systemSetting.findUnique({
+        where: { key: 'mandatory_channels_enabled' },
+      });
+      if (setting) {
+        return setting.value === 'true';
+      }
+      return config.requireChannels || false;
+    } catch (error) {
+      logger.warn('Error reading subscription settings:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Toggle or set mandatory subscription / ads state
+   */
+  static async setSubscriptionRequired(enabled) {
+    try {
+      return await prisma.systemSetting.upsert({
+        where: { key: 'mandatory_channels_enabled' },
+        update: { value: enabled ? 'true' : 'false' },
+        create: {
+          key: 'mandatory_channels_enabled',
+          value: enabled ? 'true' : 'false',
+          description: 'Majburiy obuna kanallari tekshiruvi (Reklama)',
+        },
+      });
+    } catch (error) {
+      logger.error('Error updating subscription setting:', error);
+      throw error;
+    }
+  }
+
   /**
    * Get all active required channels
    */
@@ -109,6 +148,11 @@ export class ChannelService {
    * Verify all required channel subscriptions for a user
    */
   static async checkAllSubscriptions(telegram, userId) {
+    const isRequired = await this.isSubscriptionRequired();
+    if (!isRequired) {
+      return { isSubscribed: true, missingChannels: [], totalChannels: [] };
+    }
+
     const channels = await this.getRequiredChannels();
     if (!channels || channels.length === 0) {
       return { isSubscribed: true, missingChannels: [] };

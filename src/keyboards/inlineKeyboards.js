@@ -61,7 +61,29 @@ export function getInsufficientBalanceKeyboard() {
 }
 
 /**
- * Payment Request Action Keyboard
+ * Card Deposit Quick Amounts Keyboard
+ */
+export function getCardDepositAmountsKeyboard() {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback('💳 10 000 so\'m', 'card_pack:10000'),
+      Markup.button.callback('💳 20 000 so\'m', 'card_pack:20000'),
+    ],
+    [
+      Markup.button.callback('💳 50 000 so\'m', 'card_pack:50000'),
+      Markup.button.callback('💳 100 000 so\'m', 'card_pack:100000'),
+    ],
+    [
+      Markup.button.callback('💳 200 000 so\'m', 'card_pack:200000'),
+      Markup.button.callback('💳 500 000 so\'m', 'card_pack:500000'),
+    ],
+    [Markup.button.callback('✍️ Boshqa summa kiritish', 'card_custom_amount')],
+    [Markup.button.callback('🏠 Bosh menyu', 'nav_main_menu')],
+  ]);
+}
+
+/**
+ * Payment Request Action Keyboard (Chek yuborish)
  */
 export function getPaymentActionKeyboard(paymentRequestId) {
   return Markup.inlineKeyboard([

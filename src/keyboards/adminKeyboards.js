@@ -45,10 +45,12 @@ export function getAdminPaymentApprovalKeyboard(paymentId) {
 /**
  * Admin Settings Keyboard
  */
-export function getAdminSettingsKeyboard() {
+export function getAdminSettingsKeyboard(isChannelsEnabled = false) {
+  const adsStatusEmoji = isChannelsEnabled ? '🟢 YOQILGAN' : '🔴 O\'CHIRILGAN (ADSIZ)';
   return Markup.inlineKeyboard([
     [Markup.button.callback('💳 Karta raqamini o\'zgartirish', 'admin_set_card')],
-    [Markup.button.callback('📢 Majburiy kanallar', 'admin_manage_channels')],
+    [Markup.button.callback(`📢 Majburiy obuna (Reklama): ${adsStatusEmoji}`, 'admin_toggle_ads')],
+    [Markup.button.callback('📋 Reklama kanallarini boshqarish', 'admin_manage_channels')],
     [Markup.button.callback('⬅️ Orqaga', 'admin_main')],
   ]);
 }

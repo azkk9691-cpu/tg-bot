@@ -4,9 +4,9 @@ import { logger } from '../utils/logger.js';
 
 export class PaymentService {
   /**
-   * Create a new pending payment request with 5-minute expiry
+   * Create a new pending payment request with expiry
    */
-  static async createPaymentRequest(userId, amount) {
+  static async createPaymentRequest(userId, amount, provider = 'CARD', externalId = null, currency = 'UZS') {
     try {
       const expiresAt = new Date(Date.now() + PAYMENT_EXPIRE_MINUTES * 60 * 1000);
       const amountBigInt = BigInt(amount);
@@ -15,6 +15,9 @@ export class PaymentService {
         data: {
           userId: parseInt(userId, 10),
           amount: amountBigInt,
+          provider,
+          externalId: externalId ? String(externalId) : null,
+          currency,
           status: 'PENDING',
           expiresAt,
         },
@@ -24,6 +27,107 @@ export class PaymentService {
     } catch (error) {
       logger.error('Error creating payment request:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Process an Automatic Payment (Telegram Stars, CryptoBot, Click, Payme)
+   * Idempotent and atomic transaction
+   */
+  static async processAutoPayment({
+    userId,
+    amount,
+    provider = 'STARS',
+    externalId = null,
+    currency = 'UZS',
+    description = 'Avtomatik to\'lov',
+  }) {
+    const uId = parseInt(userId, 10);
+    const amountBigInt = BigInt(amount);
+
+    try {
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // 1. Check for duplicate external ID to prevent double payouts
+          if (externalId) {
+            const existing = await tx.paymentRequest.findFirst({
+              where: {
+                externalId: String(externalId),
+                status: 'APPROVED',
+              },
+            });
+            if (existing) {
+              const user = await tx.user.findUnique({ where: { id: uId } });
+              return {
+                success: true,
+                isDuplicate: true,
+                user,
+                amount: Number(existing.amount),
+                newBalance: Number(user?.balance || 0),
+              };
+            }
+          }
+
+          // 2. Create approved payment request
+          const now = new Date();
+          const paymentRequest = await tx.paymentRequest.create({
+            data: {
+              userId: uId,
+              amount: amountBigInt,
+              provider,
+              externalId: externalId ? String(externalId) : null,
+              currency,
+              status: 'APPROVED',
+              expiresAt: now,
+              approvedAt: now,
+            },
+          });
+
+          // 3. Increment user balance and totalDeposited
+          const updatedUser = await tx.user.update({
+            where: { id: uId },
+            data: {
+              balance: { increment: amountBigInt },
+              totalDeposited: { increment: amountBigInt },
+            },
+          });
+
+          // 4. Create Transaction record
+          const transaction = await tx.transaction.create({
+            data: {
+              userId: uId,
+              type: 'DEPOSIT',
+              amount: amountBigInt,
+              status: 'COMPLETED',
+              description,
+              paymentRequestId: paymentRequest.id,
+            },
+          });
+
+          return {
+            success: true,
+            isDuplicate: false,
+            payment: paymentRequest,
+            transaction,
+            user: updatedUser,
+            amount: Number(amountBigInt),
+            newBalance: Number(updatedUser.balance),
+          };
+        },
+        {
+          maxWait: 5000,
+          timeout: 10000,
+        }
+      );
+
+      return result;
+    } catch (error) {
+      logger.error('Error in processAutoPayment:', error);
+      return {
+        success: false,
+        error: 'AUTO_PAYMENT_ERROR',
+        message: error.message || 'Avtomatik to\'lovni qayta ishlashda xatolik.',
+      };
     }
   }
 

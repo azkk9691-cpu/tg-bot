@@ -37,15 +37,6 @@ async function main() {
 
   // Create and launch bot
   try {
-    const bot = createBot();
-
-    // Start bot polling
-    await bot.launch(() => {
-      logger.info('🤖 Bot muvaffaqiyatli ishga tushirildi va xabarlarni tinglamoqda!');
-      logger.info(`👑 Asosiy Ega (Owner): @${config.ownerUsername} (ID: ${config.ownerTelegramId || 'Not configured'})`);
-      logger.info(`🛡 Adminlar: ${config.adminTelegramIds.map((id) => id.toString()).join(', ')}`);
-    });
-
     // Start lightweight HTTP health-check server for Cloud Hostings (Render, Koyeb, Railway, etc.)
     const port = process.env.PORT || 3000;
     const startTime = new Date();
@@ -71,7 +62,7 @@ async function main() {
 
       // Auto keep-alive ping for Render free tier (pings every 10 minutes to prevent sleep)
       const renderUrl = process.env.RENDER_EXTERNAL_URL || 'https://buldrop-tg-bot.onrender.com';
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' && process.env.RENDER_EXTERNAL_URL) {
         setInterval(async () => {
           try {
             const https = await import('https');
@@ -83,8 +74,19 @@ async function main() {
           } catch (e) {
             // ignore
           }
-        }, 10 * 60 * 1000); // Har 10 daqiqada o'zini uyg'otib turadi
+        }, 10 * 60 * 1000);
       }
+    });
+
+    const bot = createBot();
+
+    logger.info('🤖 Bot muvaffaqiyatli ishga tushirildi va xabarlarni tinglamoqda!');
+    logger.info(`👑 Asosiy Ega (Owner): @${config.ownerUsername} (ID: ${config.ownerTelegramId || 'Not configured'})`);
+    logger.info(`🛡 Adminlar: ${config.adminTelegramIds.map((id) => id.toString()).join(', ')}`);
+
+    // Start bot polling
+    bot.launch({ dropPendingUpdates: false }).catch((err) => {
+      logger.error('Error in bot polling:', err);
     });
 
     // Graceful stop listeners

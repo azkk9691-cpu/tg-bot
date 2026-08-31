@@ -1,4 +1,4 @@
-﻿services:
+services:
   - type: web
     name: buldrop-tg-bot
     env: node
@@ -11,14 +11,26 @@
       - key: DATABASE_URL
         value: "file:./dev.db"
       - key: BOT_TOKEN
-        sync: false
+        value: "8399345335:AAFInj7pTDZwVqtCdRJa9keHo917fcAIb8g"
+      - key: OWNER_TELEGRAM_ID
+        value: "8868949254"
+      - key: OWNER_USERNAME
+        value: "yusupov_bulldrop"
       - key: ADMIN_TELEGRAM_ID
-        sync: false
+        value: "8868949254,7547343625"
       - key: ADMIN_USERNAME
-        value: yusupov_bro
+        value: "yusupov_bulldrop,yusupov_bro"
+      - key: BOT_USERNAME
+        value: "bulx_pm_bot"
       - key: PAYMENT_CARD_NUMBER
         value: "6262910202797114"
       - key: PAYMENT_CARD_HOLDER
         value: "BULDROP PM"
       - key: PAYMENT_EXPIRE_MINUTES
         value: "5"
+      - key: REQUIRE_CHANNELS
+        value: "false"
+      - key: STARS_RATE
+        value: "250"
+      - key: PORT
+        value: "3000"

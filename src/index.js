@@ -49,7 +49,7 @@ async function main() {
       const pathname = urlObj.pathname;
 
       // 1. Health check endpoint
-      if (pathname === '/health' || pathname === '/') {
+      if (pathname === '/health' || pathname === '/' || pathname === '/ping') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         return res.end(
           JSON.stringify({
@@ -119,12 +119,16 @@ async function main() {
       res.end('Not Found');
     });
 
-    server.listen(port, () => {
+    server.listen(port, '0.0.0.0', () => {
       logger.info(`🌐 Webhook & Health server listening on port ${port}`);
       logger.info(`📲 SMS Webhook URL: http://localhost:${port}/api/sms-webhook`);
 
       // 24/7 Auto Keep-Alive ping for Render / Cloud free tier (pings every 4 minutes to prevent sleep)
-      const renderUrl = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL || 'https://buldrop-tg-bot.onrender.com';
+      const renderHost = process.env.RENDER_EXTERNAL_HOSTNAME || process.env.RENDER_EXTERNAL_URL || process.env.APP_URL;
+      const renderUrl = renderHost
+        ? (renderHost.startsWith('http') ? renderHost : `https://${renderHost}`)
+        : 'https://buldrop-tg-bot.onrender.com';
+
       if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
         logger.info(`🔄 Keep-alive monitor enabled for: ${renderUrl}/health (every 4 mins)`);
         setInterval(async () => {
@@ -150,7 +154,9 @@ async function main() {
 
     // Start bot polling
     bot.launch({ dropPendingUpdates: false }).catch((err) => {
-      logger.error('Error in bot polling:', err);
+      logger.error('Fatal error in bot polling:', err);
+      // Restart process so Render / PM2 / Docker automatically revives the bot
+      process.exit(1);
     });
 
     // Graceful stop listeners

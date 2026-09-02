@@ -1,0 +1,23 @@
+name: 24/7 Render Keep-Alive Monitor
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render free tier from sleeping (sleep threshold is 15 minutes)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Render 24/7
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Bot Service
+        run: |
+          echo "Sending keep-alive ping to Render bot..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "https://buldrop-tg-bot.onrender.com/health")
+          echo "HTTP Status: $STATUS"
+          if [ "$STATUS" -eq 200 ]; then
+            echo "✅ BULDROP PM Bot is ONLINE and AWAKE on Render!"
+          else
+            echo "⚠️ Non-200 HTTP status: $STATUS"
+          fi

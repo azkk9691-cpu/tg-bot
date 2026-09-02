@@ -110,8 +110,8 @@ export class UserService {
       return await prisma.user.findMany({
         where: {
           OR: [
-            { username: { contains: trimmed, mode: 'insensitive' } },
-            { firstName: { contains: trimmed, mode: 'insensitive' } },
+            { username: { contains: trimmed } },
+            { firstName: { contains: trimmed } },
           ],
         },
         take: 10,

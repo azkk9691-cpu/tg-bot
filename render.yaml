@@ -8,6 +8,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: RENDER
+        value: "true"
+      - key: IS_RENDER
+        value: "true"
       - key: DATABASE_URL
         value: "file:./dev.db"
       - key: BOT_TOKEN
